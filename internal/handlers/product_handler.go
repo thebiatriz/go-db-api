@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/usecases"
@@ -44,4 +46,43 @@ func (p *productHandler) CreateProduct(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusCreated, insertedProduct)
+}
+
+func (p *productHandler) GetProductById(c *gin.Context) {
+	id := c.Param("id")
+
+	if id == "" {
+		response := models.Response {
+			Message: "Id do produto não pode ser nulo",
+		}
+		c.IndentedJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	productId, err := strconv.Atoi(id)
+
+	if err != nil {
+		response := models.Response {
+			Message: "Id do produto precisa ser um número",
+		}
+		c.IndentedJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	product, err := p.productUsecase.GetProductById(productId)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	if product == nil {
+		response := models.Response {
+			Message: "O produto não foi encontrado na base de dados",
+		}
+		c.IndentedJSON(http.StatusNotFound, response)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, product)
 }

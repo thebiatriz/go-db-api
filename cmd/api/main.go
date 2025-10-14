@@ -26,11 +26,8 @@ func main() {
 	//Camada de handlers
 	ProductHandler := handlers.NewProductHandler(ProductUseCase)
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
-	})
-
 	router.GET("/products", ProductHandler.GetProducts)
+	router.GET("/products/:id", ProductHandler.GetProductById)
 	router.POST("/products", ProductHandler.CreateProduct)
 
 	router.Run(":8080")
