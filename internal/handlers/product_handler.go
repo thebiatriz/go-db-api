@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"github.com/gin-gonic/gin"
+	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/usecases"
 )
 
@@ -23,4 +24,24 @@ func (p *productHandler) GetProducts(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, products)
+}
+
+func (p *productHandler) CreateProduct(c *gin.Context) {
+	var product models.Product
+
+	err := c.BindJSON(&product)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, err)
+		return
+	}
+
+	insertedProduct, err := p.productUsecase.CreateProduct(product)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.IndentedJSON(http.StatusCreated, insertedProduct)
 }

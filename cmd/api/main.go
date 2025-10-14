@@ -31,6 +31,7 @@ func main() {
 	})
 
 	router.GET("/products", ProductHandler.GetProducts)
+	router.POST("/products", ProductHandler.CreateProduct)
 
 	router.Run(":8080")
 }
