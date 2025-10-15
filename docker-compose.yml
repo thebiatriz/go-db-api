@@ -1,4 +1,14 @@
 services:  
+  go-app:
+    container_name: go-app
+    image: go-db-api
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - go_db
   go_db:  
     container_name: go_db 
     image: postgres:12  
@@ -7,7 +17,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_DB: ${DB_NAME} 
     ports:  
-      - "${DB_PORT}:5432"  
+      - "${DB_PORT_EXTERNAL}:5432"  
     volumes:  
       - pgdata:/var/lib/postgresql/data  
 
