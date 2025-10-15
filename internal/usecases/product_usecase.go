@@ -19,16 +19,16 @@ func (pu *ProductUsecase) GetProducts() ([]models.Product, error) {
 	return pu.productRepository.GetProducts()
 }
 
-func (pu *ProductUsecase) CreateProduct(product models.Product) (models.Product, error) {
+func (pu *ProductUsecase) CreateProduct(product models.Product) (*models.Product, error) {
 	productId, err := pu.productRepository.CreateProduct(product)
 
 	if err != nil {
-		return models.Product{}, err
+		return nil, err
 	}
 
 	product.ID = productId
 
-	return product, nil
+	return &product, nil
 }
 
 func (pu *ProductUsecase) GetProductById(id_product int) (*models.Product, error) {
@@ -49,4 +49,14 @@ func (pu *ProductUsecase) DeleteProduct(id_product int) error {
 	}
 
 	return nil
+}
+
+func (pu *ProductUsecase) UpdateProduct(product models.Product) (*models.Product, error) {
+	err := pu.productRepository.UpdateProduct(product)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &product, nil
 }

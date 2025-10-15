@@ -30,6 +30,7 @@ func main() {
 	router.GET("/products/:id", ProductHandler.GetProductById)
 	router.POST("/products", ProductHandler.CreateProduct)
 	router.DELETE("/products/:id", ProductHandler.DeleteProduct)
+	router.PUT("/products/:id", ProductHandler.UpdateProduct)
 
 	router.Run(":8080")
 }

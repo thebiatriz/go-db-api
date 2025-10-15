@@ -120,7 +120,38 @@ func (pr *ProductRepository) DeleteProduct(id_product int) error {
 
 	if err != nil {
 		fmt.Println(err)
-		return err 
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrProductNotFound
+	}
+
+	query.Close()
+
+	return nil
+}
+
+func (pr *ProductRepository) UpdateProduct(product models.Product) error {
+	query, err := pr.connection.Prepare("UPDATE product SET product_name = $1, price = $2 WHERE id = $3")
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	result, err := query.Exec(product.Name, product.Price, product.ID)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		fmt.Println(err)
+		return err
 	}
 
 	if rowsAffected == 0 {
