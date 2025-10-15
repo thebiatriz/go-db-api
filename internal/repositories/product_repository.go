@@ -2,9 +2,12 @@ package repositories
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/thebiatriz/go-db-api/internal/models"
 )
+
+var ErrProductNotFound = errors.New("o produto não foi encontrado na base de dados")
 
 type ProductRepository struct {
 	connection *sql.DB
@@ -53,20 +56,20 @@ func (pr *ProductRepository) CreateProduct(product models.Product) (int, error) 
 		"(product_name, price)" +
 		"VALUES ($1, $2) RETURNING id")
 
-		if err != nil {
-			fmt.Println(err)
-			return 0, err
-		}
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
 
-		err = query.QueryRow(product.Name, product.Price).Scan(&id)
-		if err != nil {
-			fmt.Println(err)
-			return 0, err
-		}
+	err = query.QueryRow(product.Name, product.Price).Scan(&id)
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
 
-		query.Close()
+	query.Close()
 
-		return id, nil
+	return id, nil
 }
 
 func (pr *ProductRepository) GetProductById(id_product int) (*models.Product, error) {
@@ -74,7 +77,7 @@ func (pr *ProductRepository) GetProductById(id_product int) (*models.Product, er
 
 	if err != nil {
 		fmt.Println(err)
-			return nil, err
+		return nil, err
 	}
 
 	var product models.Product
@@ -96,4 +99,35 @@ func (pr *ProductRepository) GetProductById(id_product int) (*models.Product, er
 	query.Close()
 
 	return &product, nil
+}
+
+func (pr *ProductRepository) DeleteProduct(id_product int) error {
+	query, err := pr.connection.Prepare("DELETE FROM product WHERE id = $1")
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	result, err := query.Exec(id_product)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		fmt.Println(err)
+		return err 
+	}
+
+	if rowsAffected == 0 {
+		return ErrProductNotFound
+	}
+
+	query.Close()
+
+	return nil
 }
