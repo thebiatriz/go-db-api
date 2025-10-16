@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"github.com/gin-gonic/gin"
 	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
@@ -31,6 +32,48 @@ func (u UserHandler) GetUsers(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, users)
+}
+
+func (u UserHandler) GetUserById(c *gin.Context) {
+	id := c.Param("id")
+
+	if id == "" {
+		response := models.Response{
+			Message: "Id não pode estar vazio",
+		}
+		c.IndentedJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	userId, err := strconv.Atoi(id)
+
+	if err != nil {
+		response := models.Response{
+			Message: "Id precisa ser um número",
+		}
+		c.IndentedJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	user, err := u.userUsecase.GetUserById(userId)
+
+	if err != nil {
+		response := models.Response{
+			Message: "Ocorreu um erro interno no servidor",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if user == nil {
+		response := models.Response{
+			Message: "O usuário não foi encontrado na base de dados",
+		}
+		c.IndentedJSON(http.StatusNotFound, response)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, user)
 }
 
 func (u UserHandler) CreateUser(c *gin.Context) {

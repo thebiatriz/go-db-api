@@ -8,7 +8,7 @@ import (
 	"github.com/thebiatriz/go-db-api/internal/models"
 )
 
-var ErrEmailAlreadyExists = errors.New("o email inserido já está cadastrado") 
+var ErrEmailAlreadyExists = errors.New("o email inserido já está cadastrado")
 
 type UserRepository struct {
 	connection *sql.DB
@@ -50,6 +50,29 @@ func (ur *UserRepository) GetUsers() ([]models.User, error) {
 	rows.Close()
 
 	return userList, nil
+}
+
+func (ur UserRepository) GetUserById(id_user int) (*models.User, error) {
+	var user models.User
+
+	query := "SELECT id, name, email FROM users WHERE id = $1"
+
+	err := ur.connection.QueryRow(query, id_user).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func (ur UserRepository) CreateUser(user models.User) (int, error) {
