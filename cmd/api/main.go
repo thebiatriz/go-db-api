@@ -17,20 +17,21 @@ func main() {
 		panic(err)
 	}
 
-	//Camada de repository
 	ProductRepository := repositories.NewProductRepository(dbConnection)
-
-	//Camada de usecase
 	ProductUseCase := usecases.NewProductUsecase(ProductRepository)
-
-	//Camada de handlers
 	ProductHandler := handlers.NewProductHandler(ProductUseCase)
+
+	UserRepository := repositories.NewUserRepository(dbConnection)
+	UserUsecase := usecases.NewUserUsecase(UserRepository)
+	UserHandler := handlers.NewUserHandler(UserUsecase)
 
 	router.GET("/products", ProductHandler.GetProducts)
 	router.GET("/products/:id", ProductHandler.GetProductById)
 	router.POST("/products", ProductHandler.CreateProduct)
 	router.DELETE("/products/:id", ProductHandler.DeleteProduct)
 	router.PUT("/products/:id", ProductHandler.UpdateProduct)
+
+	router.GET("/users", UserHandler.GetUsers)
 
 	router.Run(":8080")
 }
