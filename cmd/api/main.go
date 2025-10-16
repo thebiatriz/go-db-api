@@ -32,6 +32,7 @@ func main() {
 	router.PUT("/products/:id", ProductHandler.UpdateProduct)
 
 	router.GET("/users", UserHandler.GetUsers)
+	router.POST("/users", UserHandler.CreateUser)
 
 	router.Run(":8080")
 }
