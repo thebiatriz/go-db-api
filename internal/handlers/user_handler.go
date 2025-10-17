@@ -110,6 +110,49 @@ func (u UserHandler) CreateUser(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, newUser)
 }
 
+func (u UserHandler) DeleteUser(c *gin.Context) {
+	id := c.Param("id")
+
+	if id == "" {
+		response := models.Response{
+			Message: "Id não pode estar vazio",
+		}
+		c.IndentedJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	userId, err := strconv.Atoi(id)
+
+	if err != nil {
+		response := models.Response{
+			Message: "Id precisa ser um número",
+		}
+		c.IndentedJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	err = u.userUsecase.DeleteUser(userId)
+
+	if err != nil {
+		if errors.Is(err, repositories.ErrUserNotFound) {
+			response := models.Response{
+				Message: "O usuário não foi encontrado na base de dados",
+			}
+			c.IndentedJSON(http.StatusNotFound, response)
+			return
+		}
+
+		response := models.Response{
+			Message: "Ocorreu um erro interno no servidor",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+
+}
+
 func (u UserHandler) UpdateUser(c *gin.Context) {
 	var user models.User
 	id := c.Param("id")

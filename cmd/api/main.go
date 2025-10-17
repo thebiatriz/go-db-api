@@ -34,6 +34,7 @@ func main() {
 	router.GET("/users", UserHandler.GetUsers)
 	router.GET("/users/:id", UserHandler.GetUserById)
 	router.POST("/users", UserHandler.CreateUser)
+	router.DELETE("/users/:id", UserHandler.DeleteUser)
 	router.PUT("/users/:id", UserHandler.UpdateUser)
 
 	router.Run(":8080")

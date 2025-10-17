@@ -20,8 +20,8 @@ func (uu *UserUsecase) GetUsers() ([]models.User, error) {
 	return uu.userRepository.GetUsers()
 }
 
-func (uu UserUsecase) GetUserById(id_product int) (*models.User, error) {
-	user, err := uu.userRepository.GetUserById(id_product)
+func (uu UserUsecase) GetUserById(id_user int) (*models.User, error) {
+	user, err := uu.userRepository.GetUserById(id_user)
 
 	if err != nil {
 		return nil, err
@@ -46,6 +46,16 @@ func (uu *UserUsecase) CreateUser(user models.User) (*models.User, error) {
 	user.ID = userId
 
 	return &user, nil
+}
+
+func (uu UserUsecase) DeleteUser(id_user int) error {
+	err := uu.userRepository.DeleteUser(id_user)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (uu UserUsecase) UpdateUser(user models.User) (*models.User, error) {
