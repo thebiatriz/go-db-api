@@ -9,6 +9,7 @@ import (
 )
 
 var ErrEmailAlreadyExists = errors.New("o email inserido já está cadastrado")
+var ErrUserNotFound = errors.New("o usuário não foi encontrado na base de dados")
 
 type UserRepository struct {
 	connection *sql.DB
@@ -92,4 +93,28 @@ func (ur UserRepository) CreateUser(user models.User) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (ur UserRepository) UpdateUser(user models.User) error {
+	query := "UPDATE users SET name = $1, email = $2 WHERE id = $3"
+
+	result, err := ur.connection.Exec(query, user.Name, user.Email, user.ID)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrUserNotFound
+	}
+
+	return nil
 }

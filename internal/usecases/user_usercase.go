@@ -47,3 +47,13 @@ func (uu *UserUsecase) CreateUser(user models.User) (*models.User, error) {
 
 	return &user, nil
 }
+
+func (uu UserUsecase) UpdateUser(user models.User) (*models.User, error) {
+	err := uu.userRepository.UpdateUser(user)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
