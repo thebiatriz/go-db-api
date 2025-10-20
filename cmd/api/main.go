@@ -37,5 +37,7 @@ func main() {
 	router.DELETE("/users/:id", UserHandler.DeleteUser)
 	router.PUT("/users/:id", UserHandler.UpdateUser)
 
+	router.POST("/login", UserHandler.Login)
+
 	router.Run(":8080")
 }

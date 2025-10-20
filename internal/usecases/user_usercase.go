@@ -1,9 +1,19 @@
 package usecases
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"time"
+	"github.com/golang-jwt/jwt"
 	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrUserNotFound       = errors.New("o usuário não existe na base de dados")
+	ErrInvalidCredentials = errors.New("senha inválida")
 )
 
 type UserUsecase struct {
@@ -14,6 +24,51 @@ func NewUserUsecase(userRepository repositories.UserRepository) UserUsecase {
 	return UserUsecase{
 		userRepository: userRepository,
 	}
+}
+
+func generateToken(user_id int, user_role string) (string, error) {
+	secretKey := []byte(os.Getenv("SECRET_JWT"))
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"user_id": user_id,
+			"role":    user_role,
+			"exp":     time.Now().Add(time.Hour * 12).Unix(),
+		})
+
+	tokenString, err := token.SignedString(secretKey)
+
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func (uu *UserUsecase) Login(user_email string, password string) (string, error) {
+	user, err := uu.userRepository.GetUserByEmail(user_email)
+
+	if err != nil {
+		return "", err
+	}
+
+	if user == nil {
+		return "", ErrUserNotFound
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+
+	if err != nil {
+		return "", ErrInvalidCredentials
+	}
+
+	token, err := generateToken(user.ID, user.Role)
+
+	if err != nil {
+		return "", fmt.Errorf("erro interno ao gerar o token: %w", err)
+	}
+
+	return token, nil
 }
 
 func (uu *UserUsecase) GetUsers() ([]models.User, error) {
