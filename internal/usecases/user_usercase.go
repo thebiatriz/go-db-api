@@ -3,17 +3,18 @@ package usecases
 import (
 	"errors"
 	"fmt"
-	"os"
-	"time"
 	"github.com/golang-jwt/jwt"
 	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
+	"os"
+	"time"
 )
 
 var (
 	ErrUserNotFound       = errors.New("o usuário não existe na base de dados")
 	ErrInvalidCredentials = errors.New("senha inválida")
+	ErrNotAuthorized      = errors.New("não autorizado para modificação")
 )
 
 type UserUsecase struct {
@@ -103,8 +104,15 @@ func (uu *UserUsecase) CreateUser(user models.User) (*models.User, error) {
 	return &user, nil
 }
 
-func (uu UserUsecase) DeleteUser(id_user int) error {
-	err := uu.userRepository.DeleteUser(id_user)
+func (uu UserUsecase) DeleteUser(targetUserId, requesterId int, requesterRole string) error {
+	isAdmin := requesterRole == "admin"
+	isSelf := targetUserId == requesterId
+
+	if !isAdmin && !isSelf {
+		return ErrNotAuthorized
+	}
+
+	err := uu.userRepository.DeleteUser(targetUserId)
 
 	if err != nil {
 		return err

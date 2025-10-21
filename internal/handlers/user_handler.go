@@ -3,13 +3,13 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
 	"github.com/thebiatriz/go-db-api/internal/usecases"
+	"net/http"
+	"strconv"
 )
 
 type UserHandler struct {
@@ -137,9 +137,9 @@ func (u UserHandler) CreateUser(c *gin.Context) {
 				wrongTag = "tamanho mínimo"
 			case "email":
 				wrongTag = "formato do email"
-			case "required": 
+			case "required":
 				wrongTag = "campo obrigatório"
-			default: 
+			default:
 				wrongTag = fmt.Sprintf("regra '%s'", firstError.Tag())
 			}
 
@@ -187,9 +187,9 @@ func (u UserHandler) CreateUser(c *gin.Context) {
 }
 
 func (u UserHandler) DeleteUser(c *gin.Context) {
-	id := c.Param("id")
+	targetId := c.Param("id")
 
-	if id == "" {
+	if targetId == "" {
 		response := models.Response{
 			Message: "Id não pode estar vazio",
 		}
@@ -197,7 +197,7 @@ func (u UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	userId, err := strconv.Atoi(id)
+	targetUserId, err := strconv.Atoi(targetId)
 
 	if err != nil {
 		response := models.Response{
@@ -207,7 +207,27 @@ func (u UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = u.userUsecase.DeleteUser(userId)
+	requesterIdStr, exists := c.Get("userId")
+	if !exists {
+		response := models.Response{
+			Message: "Não foi possível identificar o usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+	requesterId := requesterIdStr.(int)
+
+	requesterRoleStr, exists := c.Get("userRole")
+	if !exists {
+		response := models.Response{
+			Message: "Não foi possível identificar a permissão do usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+	requesterRole := requesterRoleStr.(string)
+
+	err = u.userUsecase.DeleteUser(targetUserId, requesterId, requesterRole)
 
 	if err != nil {
 		if errors.Is(err, repositories.ErrUserNotFound) {
@@ -215,6 +235,14 @@ func (u UserHandler) DeleteUser(c *gin.Context) {
 				Message: "O usuário não foi encontrado na base de dados",
 			}
 			c.IndentedJSON(http.StatusNotFound, response)
+			return
+		}
+
+		if errors.Is(err, usecases.ErrNotAuthorized) {
+			response := models.Response{
+				Message: "Você não tem permissão para deletar esse usuário",
+			}
+			c.IndentedJSON(http.StatusUnauthorized, response)
 			return
 		}
 
