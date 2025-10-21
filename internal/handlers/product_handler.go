@@ -23,26 +23,54 @@ func NewProductHandler(usecase usecases.ProductUsecase) productHandler {
 func (p *productHandler) GetProducts(c *gin.Context) {
 	products, err := p.productUsecase.GetProducts()
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, err)
+		response := models.Response{
+			Message: "Ocorreu um erro interno no servidor",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
 	}
 
 	c.IndentedJSON(http.StatusOK, products)
 }
 
 func (p *productHandler) CreateProduct(c *gin.Context) {
-	var product models.Product
+	var req models.CreateProductRequest
 
-	err := c.BindJSON(&product)
+	requestIdStr, exists := c.Get("userId")
+	if !exists {
+		response := models.Response{
+			Message: "Não foi possível identificar o usuário",
+		}
 
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, err)
+		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
 
-	insertedProduct, err := p.productUsecase.CreateProduct(product)
+	requestId := requestIdStr.(int)
+
+	err := c.BindJSON(&req)
 
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, err)
+		response := models.Response{
+			Message: "Ocorreu um erro ao receber os dados na requisição",
+		}
+		c.IndentedJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	productToCreate := models.Product{
+		Name:   req.Name,
+		Price:  req.Price,
+		UserID: requestId,
+	}
+
+	insertedProduct, err := p.productUsecase.CreateProduct(productToCreate)
+
+	if err != nil {
+		response := models.Response{
+			Message: "Ocorreu um erro interno no servidor",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
 
@@ -108,7 +136,29 @@ func (p *productHandler) DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	err = p.productUsecase.DeleteProduct(productId)
+	requesterIdStr, exists := c.Get("userId")
+	if !exists {
+		response := models.Response{
+			Message: "Não foi possível identificar o usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+	requesterId := requesterIdStr.(int)
+
+	requesterRoleStr, exists := c.Get("userRole")
+	if !exists {
+		response := models.Response{
+			Message: "Não foi possível identificar a permissão do usuário",
+		}
+
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	requesterRole := requesterRoleStr.(string)
+
+	err = p.productUsecase.DeleteProduct(productId, requesterId, requesterRole)
 
 	if err != nil {
 		if errors.Is(err, repositories.ErrProductNotFound) {
@@ -116,6 +166,14 @@ func (p *productHandler) DeleteProduct(c *gin.Context) {
 				Message: "O produto não foi encontrado na base de dados",
 			}
 			c.IndentedJSON(http.StatusNotFound, response)
+			return
+		}
+
+		if errors.Is(err, usecases.ErrNotAuthorized) {
+			response := models.Response{
+				Message: "Você não tem permissão para deletar esse produto",
+			}
+			c.IndentedJSON(http.StatusUnauthorized, response)
 			return
 		}
 
@@ -156,7 +214,10 @@ func (p *productHandler) UpdateProduct(c *gin.Context) {
 	err = c.BindJSON(&product)
 
 	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, err)
+		response := models.Response{
+			Message: "Ocorreu um erro ao receber os dados na requisição",
+		}
+		c.IndentedJSON(http.StatusBadRequest, response)
 		return
 	}
 

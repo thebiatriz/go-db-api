@@ -41,9 +41,23 @@ func (pu *ProductUsecase) GetProductById(id_product int) (*models.Product, error
 	return product, nil
 }
 
-func (pu *ProductUsecase) DeleteProduct(id_product int) error {
-	err := pu.productRepository.DeleteProduct(id_product)
+func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, requestRole string) error {
+	productToDelete, err := pu.productRepository.GetProductById(id_product)
+	if err != nil {
+		return err
+	}
+	if productToDelete == nil {
+		return repositories.ErrProductNotFound
+	}
 
+	isAdmin := requestRole == "admin"
+	isOwner := requesterId == productToDelete.UserID
+
+	if !isAdmin && !isOwner {
+		return ErrNotAuthorized 
+	}
+
+	err = pu.productRepository.DeleteProduct(id_product)
 	if err != nil {
 		return err
 	}

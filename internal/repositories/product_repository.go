@@ -20,7 +20,7 @@ func NewProductRepository(connection *sql.DB) ProductRepository {
 }
 
 func (pr *ProductRepository) GetProducts() ([]models.Product, error) {
-	query := "SELECT id, product_name, price FROM product"
+	query := "SELECT id, name, price, user_id FROM product"
 	rows, err := pr.connection.Query(query)
 
 	if err != nil {
@@ -35,7 +35,8 @@ func (pr *ProductRepository) GetProducts() ([]models.Product, error) {
 		err = rows.Scan(
 			&productObj.ID,
 			&productObj.Name,
-			&productObj.Price)
+			&productObj.Price,
+			&productObj.UserID)
 
 		if err != nil {
 			fmt.Println(err)
@@ -53,15 +54,15 @@ func (pr *ProductRepository) GetProducts() ([]models.Product, error) {
 func (pr *ProductRepository) CreateProduct(product models.Product) (int, error) {
 	var id int
 	query, err := pr.connection.Prepare("INSERT INTO product" +
-		"(product_name, price)" +
-		"VALUES ($1, $2) RETURNING id")
+		"(name, price, user_id)" +
+		"VALUES ($1, $2, $3) RETURNING id")
 
 	if err != nil {
 		fmt.Println(err)
 		return 0, err
 	}
 
-	err = query.QueryRow(product.Name, product.Price).Scan(&id)
+	err = query.QueryRow(product.Name, product.Price, product.UserID).Scan(&id)
 	if err != nil {
 		fmt.Println(err)
 		return 0, err
@@ -73,7 +74,7 @@ func (pr *ProductRepository) CreateProduct(product models.Product) (int, error) 
 }
 
 func (pr *ProductRepository) GetProductById(id_product int) (*models.Product, error) {
-	query, err := pr.connection.Prepare("SELECT * FROM product WHERE id = $1")
+	query, err := pr.connection.Prepare("SELECT id, name, price, user_id FROM product WHERE id = $1")
 
 	if err != nil {
 		fmt.Println(err)
@@ -86,6 +87,7 @@ func (pr *ProductRepository) GetProductById(id_product int) (*models.Product, er
 		&product.ID,
 		&product.Name,
 		&product.Price,
+		&product.UserID,
 	)
 
 	if err != nil {
@@ -133,14 +135,14 @@ func (pr *ProductRepository) DeleteProduct(id_product int) error {
 }
 
 func (pr *ProductRepository) UpdateProduct(product models.Product) error {
-	query, err := pr.connection.Prepare("UPDATE product SET product_name = $1, price = $2 WHERE id = $3")
+	query, err := pr.connection.Prepare("UPDATE product SET product_name = $1, price = $2 WHERE id = $3 AND user_id = $4")
 
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 
-	result, err := query.Exec(product.Name, product.Price, product.ID)
+	result, err := query.Exec(product.Name, product.Price, product.ID, product.UserID)
 
 	if err != nil {
 		fmt.Println(err)
