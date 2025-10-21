@@ -25,19 +25,24 @@ func main() {
 	UserUsecase := usecases.NewUserUsecase(UserRepository)
 	UserHandler := handlers.NewUserHandler(UserUsecase)
 
-	router.GET("/products", ProductHandler.GetProducts)
-	router.GET("/products/:id", ProductHandler.GetProductById)
-	router.POST("/products", ProductHandler.CreateProduct)
-	router.DELETE("/products/:id", ProductHandler.DeleteProduct)
-	router.PUT("/products/:id", ProductHandler.UpdateProduct)
-
-	router.GET("/users", UserHandler.GetUsers)
-	router.GET("/users/:id", UserHandler.GetUserById)
 	router.POST("/users", UserHandler.CreateUser)
-	router.DELETE("/users/:id", UserHandler.DeleteUser)
-	router.PUT("/users/:id", UserHandler.UpdateUser)
-
 	router.POST("/login", UserHandler.Login)
+
+	protected := router.Group("/")
+	protected.Use(handlers.AuthMiddleware())
+
+	productRoutes := protected.Group("/products")
+	productRoutes.GET("/", ProductHandler.GetProducts)
+	productRoutes.GET("/:id", ProductHandler.GetProductById)
+	productRoutes.POST("/", ProductHandler.CreateProduct)
+	productRoutes.DELETE("/:id", ProductHandler.DeleteProduct)
+	productRoutes.PUT("/:id", ProductHandler.UpdateProduct)
+
+	userRoutes := protected.Group("/users")
+	userRoutes.GET("/", UserHandler.GetUsers)
+	userRoutes.GET("/:id", UserHandler.GetUserById)
+	userRoutes.DELETE("/:id", UserHandler.DeleteUser)
+	userRoutes.PUT("/:id", UserHandler.UpdateUser)
 
 	router.Run(":8080")
 }
