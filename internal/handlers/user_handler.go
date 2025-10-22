@@ -138,7 +138,7 @@ func (u UserHandler) CreateUser(c *gin.Context) {
 			case "email":
 				wrongTag = "formato do email inválido"
 			case "required":
-				wrongTag = "campo obrigatório não preenchido"
+				wrongTag = "campo obrigatório ausente"
 			default:
 				wrongTag = fmt.Sprintf("regra '%s'", firstError.Tag())
 			}
@@ -300,7 +300,7 @@ func (u UserHandler) UpdateUser(c *gin.Context) {
 	requesterRole := requesterRoleStr.(string)
 
 	err = c.BindJSON(&req)
-	
+
 	if err != nil {
 		var validationErrs validator.ValidationErrors
 		var wrongTag string

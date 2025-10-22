@@ -54,7 +54,7 @@ func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, request
 	isOwner := requesterId == productToDelete.UserID
 
 	if !isAdmin && !isOwner {
-		return ErrNotAuthorized 
+		return ErrNotAuthorized
 	}
 
 	err = pu.productRepository.DeleteProduct(id_product)
@@ -65,8 +65,8 @@ func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, request
 	return nil
 }
 
-func (pu *ProductUsecase) UpdateProduct(product models.Product, requesterId int) (*models.Product, error) {
-	productToUpdate, err := pu.productRepository.GetProductById(product.ID)
+func (pu *ProductUsecase) UpdateProduct(targetId, requesterId int, req models.UpdateProductRequest) (*models.Product, error) {
+	productToUpdate, err := pu.productRepository.GetProductById(targetId)
 	if err != nil {
 		return nil, err
 	}
@@ -81,11 +81,19 @@ func (pu *ProductUsecase) UpdateProduct(product models.Product, requesterId int)
 		return nil, ErrNotAuthorized
 	}
 
-	err = pu.productRepository.UpdateProduct(product, requesterId)
+	if req.Name != nil {
+		productToUpdate.Name = *req.Name
+	}
+
+	if req.Price != nil {
+		productToUpdate.Price = *req.Price
+	}
+
+	err = pu.productRepository.UpdateProduct(*productToUpdate, requesterId)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &product, nil
+	return productToUpdate, nil
 }
