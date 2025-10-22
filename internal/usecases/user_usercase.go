@@ -121,19 +121,36 @@ func (uu UserUsecase) DeleteUser(targetUserId, requesterId int, requesterRole st
 	return nil
 }
 
-func (uu UserUsecase) UpdateUser(requesterId int, requesterRole string, user models.User) (*models.User, error) {
+func (uu UserUsecase) UpdateUser(targetUserId, requesterId int, requesterRole string, req models.UpdateUserRequest) (*models.User, error) {
+	currentUser, err := uu.userRepository.GetUserById(targetUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	if currentUser == nil {
+		return nil, ErrUserNotFound
+	}
+
+	isSelf := requesterId == currentUser.ID
 	isAdmin := requesterRole == "admin"
-	isSelf := user.ID == requesterId
 
 	if !isAdmin && !isSelf {
 		return nil, ErrNotAuthorized
 	}
 
-	err := uu.userRepository.UpdateUser(user)
+	if req.Name != nil {
+		currentUser.Name = *req.Name
+	}
+
+	if req.Email != nil {
+		currentUser.Email = *req.Email
+	}
+
+	err = uu.userRepository.UpdateUser(*currentUser)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &user, nil
+	return currentUser, nil
 }

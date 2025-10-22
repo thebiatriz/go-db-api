@@ -134,11 +134,11 @@ func (u UserHandler) CreateUser(c *gin.Context) {
 
 			switch firstError.Tag() {
 			case "min":
-				wrongTag = "tamanho mínimo"
+				wrongTag = "tamanho mínimo insuficiente"
 			case "email":
-				wrongTag = "formato do email"
+				wrongTag = "formato do email inválido"
 			case "required":
-				wrongTag = "campo obrigatório"
+				wrongTag = "campo obrigatório não preenchido"
 			default:
 				wrongTag = fmt.Sprintf("regra '%s'", firstError.Tag())
 			}
@@ -258,7 +258,7 @@ func (u UserHandler) DeleteUser(c *gin.Context) {
 }
 
 func (u UserHandler) UpdateUser(c *gin.Context) {
-	var user models.User
+	var req models.UpdateUserRequest
 	targetId := c.Param("id")
 
 	if targetId == "" {
@@ -299,8 +299,33 @@ func (u UserHandler) UpdateUser(c *gin.Context) {
 	}
 	requesterRole := requesterRoleStr.(string)
 
-	err = c.BindJSON(&user)
+	err = c.BindJSON(&req)
+	
 	if err != nil {
+		var validationErrs validator.ValidationErrors
+		var wrongTag string
+
+		if errors.As(err, &validationErrs) {
+			firstError := validationErrs[0]
+
+			switch firstError.Tag() {
+			case "min":
+				wrongTag = "tamanho mínimo insuficiente"
+			case "email":
+				wrongTag = "formato do email inválido"
+			default:
+				wrongTag = fmt.Sprintf("regra '%s'", firstError.Tag())
+			}
+
+			errorMessage := fmt.Sprintf("Erro no campo '%s': falhou na regra '%s'", firstError.Field(), wrongTag)
+
+			response := models.Response{
+				Message: errorMessage,
+			}
+			c.IndentedJSON(http.StatusBadRequest, response)
+			return
+		}
+
 		response := models.Response{
 			Message: "Ocorreu um erro ao receber os dados na requisição",
 		}
@@ -308,8 +333,7 @@ func (u UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user.ID = targetUserId
-	updatedUser, err := u.userUsecase.UpdateUser(requesterId, requesterRole, user)
+	updatedUser, err := u.userUsecase.UpdateUser(targetUserId, requesterId, requesterRole, req)
 
 	if err != nil {
 		if errors.Is(err, repositories.ErrUserNotFound) {

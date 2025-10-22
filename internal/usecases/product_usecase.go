@@ -67,9 +67,9 @@ func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, request
 
 func (pu *ProductUsecase) UpdateProduct(product models.Product, requesterId int) (*models.Product, error) {
 	productToUpdate, err := pu.productRepository.GetProductById(product.ID)
-	if err != nil {{
+	if err != nil {
 		return nil, err
-	}}
+	}
 
 	if productToUpdate == nil {
 		return nil, repositories.ErrProductNotFound
