@@ -41,7 +41,7 @@ func (pu *ProductUsecase) GetProductById(id_product int) (*models.Product, error
 	return product, nil
 }
 
-func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, requestRole string) error {
+func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, requesterRole string) error {
 	productToDelete, err := pu.productRepository.GetProductById(id_product)
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, request
 		return repositories.ErrProductNotFound
 	}
 
-	isAdmin := requestRole == "admin"
+	isAdmin := requesterRole == "admin"
 	isOwner := requesterId == productToDelete.UserID
 
 	if !isAdmin && !isOwner {
@@ -65,8 +65,23 @@ func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, request
 	return nil
 }
 
-func (pu *ProductUsecase) UpdateProduct(product models.Product) (*models.Product, error) {
-	err := pu.productRepository.UpdateProduct(product)
+func (pu *ProductUsecase) UpdateProduct(product models.Product, requesterId int) (*models.Product, error) {
+	productToUpdate, err := pu.productRepository.GetProductById(product.ID)
+	if err != nil {{
+		return nil, err
+	}}
+
+	if productToUpdate == nil {
+		return nil, repositories.ErrProductNotFound
+	}
+
+	isOwner := productToUpdate.UserID == requesterId
+
+	if !isOwner {
+		return nil, ErrNotAuthorized
+	}
+
+	err = pu.productRepository.UpdateProduct(product, requesterId)
 
 	if err != nil {
 		return nil, err

@@ -7,7 +7,7 @@ import (
 	"github.com/thebiatriz/go-db-api/internal/models"
 )
 
-var ErrProductNotFound = errors.New("o produto não foi encontrado na base de dados")
+var ErrProductNotFound = errors.New("o produto não foi encontrado na base de dados ou não pertence ao usuário")
 
 type ProductRepository struct {
 	connection *sql.DB
@@ -134,15 +134,15 @@ func (pr *ProductRepository) DeleteProduct(id_product int) error {
 	return nil
 }
 
-func (pr *ProductRepository) UpdateProduct(product models.Product) error {
-	query, err := pr.connection.Prepare("UPDATE product SET product_name = $1, price = $2 WHERE id = $3 AND user_id = $4")
+func (pr *ProductRepository) UpdateProduct(product models.Product, requesterId int) error {
+	query, err := pr.connection.Prepare("UPDATE product SET name = $1, price = $2 WHERE id = $3 AND user_id = $4")
 
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 
-	result, err := query.Exec(product.Name, product.Price, product.ID, product.UserID)
+	result, err := query.Exec(product.Name, product.Price, product.ID, requesterId)
 
 	if err != nil {
 		fmt.Println(err)

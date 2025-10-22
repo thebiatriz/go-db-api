@@ -101,7 +101,10 @@ func (p *productHandler) GetProductById(c *gin.Context) {
 	product, err := p.productUsecase.GetProductById(productId)
 
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, err)
+		response := models.Response{
+			Message: "Ocorreu um erro interno no servidor",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
 
@@ -195,7 +198,6 @@ func (p *productHandler) UpdateProduct(c *gin.Context) {
 		response := models.Response{
 			Message: "Id do produto não pode ser nulo",
 		}
-
 		c.IndentedJSON(http.StatusBadRequest, response)
 		return
 	}
@@ -206,7 +208,6 @@ func (p *productHandler) UpdateProduct(c *gin.Context) {
 		response := models.Response{
 			Message: "Id do produto precisa ser um número",
 		}
-
 		c.IndentedJSON(http.StatusBadRequest, response)
 		return
 	}
@@ -223,7 +224,17 @@ func (p *productHandler) UpdateProduct(c *gin.Context) {
 
 	product.ID = productId
 
-	updatedProduct, err := p.productUsecase.UpdateProduct(product)
+	requesterIdStr, exists := c.Get("userId")
+	if !exists {
+		response := models.Response{
+			Message: "Não foi possível identificar o usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+	requesterId := requesterIdStr.(int)
+
+	updatedProduct, err := p.productUsecase.UpdateProduct(product, requesterId)
 
 	if err != nil {
 		if errors.Is(err, repositories.ErrProductNotFound) {
@@ -231,6 +242,14 @@ func (p *productHandler) UpdateProduct(c *gin.Context) {
 				Message: "O produto não foi encontrado na base de dados",
 			}
 			c.IndentedJSON(http.StatusNotFound, response)
+			return
+		}
+
+		if errors.Is(err, usecases.ErrNotAuthorized) {
+			response := models.Response{
+				Message: "Você não tem permissão para atualizar esse produto",
+			}
+			c.IndentedJSON(http.StatusUnauthorized, response)
 			return
 		}
 
