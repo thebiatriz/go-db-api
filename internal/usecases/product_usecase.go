@@ -31,8 +31,8 @@ func (pu *ProductUsecase) CreateProduct(product models.Product) (*models.Product
 	return &product, nil
 }
 
-func (pu *ProductUsecase) GetProductById(id_product int) (*models.Product, error) {
-	product, err := pu.productRepository.GetProductById(id_product)
+func (pu *ProductUsecase) GetProductById(productId int) (*models.Product, error) {
+	product, err := pu.productRepository.GetProductById(productId)
 
 	if err != nil {
 		return nil, err
@@ -41,8 +41,8 @@ func (pu *ProductUsecase) GetProductById(id_product int) (*models.Product, error
 	return product, nil
 }
 
-func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, requesterRole string) error {
-	productToDelete, err := pu.productRepository.GetProductById(id_product)
+func (pu *ProductUsecase) DeleteProduct(productId int, requesterId int, requesterRole string) error {
+	productToDelete, err := pu.productRepository.GetProductById(productId)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (pu *ProductUsecase) DeleteProduct(id_product int, requesterId int, request
 		return ErrNotAuthorized
 	}
 
-	err = pu.productRepository.DeleteProduct(id_product)
+	err = pu.productRepository.DeleteProduct(productId)
 	if err != nil {
 		return err
 	}

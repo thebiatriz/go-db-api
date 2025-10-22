@@ -54,12 +54,12 @@ func (ur *UserRepository) GetUsers() ([]models.User, error) {
 	return userList, nil
 }
 
-func (ur UserRepository) GetUserById(id_user int) (*models.User, error) {
+func (ur UserRepository) GetUserById(userId int) (*models.User, error) {
 	var user models.User
 
 	query := "SELECT id, name, email, role FROM users WHERE id = $1"
 
-	err := ur.connection.QueryRow(query, id_user).Scan(
+	err := ur.connection.QueryRow(query, userId).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
@@ -97,10 +97,10 @@ func (ur UserRepository) CreateUser(user models.User) (int, error) {
 	return id, nil
 }
 
-func (ur UserRepository) DeleteUser(id_user int) error {
+func (ur UserRepository) DeleteUser(userId int) error {
 	query := "DELETE FROM users WHERE id = $1"
 
-	result, err := ur.connection.Exec(query, id_user)
+	result, err := ur.connection.Exec(query, userId)
 
 	if err != nil {
 		fmt.Println(err)
@@ -145,11 +145,11 @@ func (ur UserRepository) UpdateUser(user models.User) error {
 	return nil
 }
 
-func (ur UserRepository) GetUserByEmail(user_email string) (*models.User, error) {
+func (ur UserRepository) GetUserByEmail(userEmail string) (*models.User, error) {
 	var user models.User
 	query := "SELECT id, name, email, password, role FROM users WHERE email = $1"
 
-	err := ur.connection.QueryRow(query, user_email).Scan(
+	err := ur.connection.QueryRow(query, userEmail).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,

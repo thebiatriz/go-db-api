@@ -73,7 +73,7 @@ func (pr *ProductRepository) CreateProduct(product models.Product) (int, error) 
 	return id, nil
 }
 
-func (pr *ProductRepository) GetProductById(id_product int) (*models.Product, error) {
+func (pr *ProductRepository) GetProductById(productId int) (*models.Product, error) {
 	query, err := pr.connection.Prepare("SELECT id, name, price, user_id FROM product WHERE id = $1")
 
 	if err != nil {
@@ -83,7 +83,7 @@ func (pr *ProductRepository) GetProductById(id_product int) (*models.Product, er
 
 	var product models.Product
 
-	err = query.QueryRow(id_product).Scan(
+	err = query.QueryRow(productId).Scan(
 		&product.ID,
 		&product.Name,
 		&product.Price,
@@ -103,7 +103,7 @@ func (pr *ProductRepository) GetProductById(id_product int) (*models.Product, er
 	return &product, nil
 }
 
-func (pr *ProductRepository) DeleteProduct(id_product int) error {
+func (pr *ProductRepository) DeleteProduct(productId int) error {
 	query, err := pr.connection.Prepare("DELETE FROM product WHERE id = $1")
 
 	if err != nil {
@@ -111,7 +111,7 @@ func (pr *ProductRepository) DeleteProduct(id_product int) error {
 		return err
 	}
 
-	result, err := query.Exec(id_product)
+	result, err := query.Exec(productId)
 
 	if err != nil {
 		fmt.Println(err)

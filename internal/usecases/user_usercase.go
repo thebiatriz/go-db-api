@@ -27,13 +27,13 @@ func NewUserUsecase(userRepository repositories.UserRepository) UserUsecase {
 	}
 }
 
-func generateToken(user_id int, user_role string) (string, error) {
+func generateToken(userId int, userRole string) (string, error) {
 	secretKey := []byte(os.Getenv("SECRET_JWT"))
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
-			"user_id": user_id,
-			"role":    user_role,
+			"user_id": userId,
+			"role":    userRole,
 			"exp":     time.Now().Add(time.Hour * 12).Unix(),
 		})
 
@@ -46,8 +46,8 @@ func generateToken(user_id int, user_role string) (string, error) {
 	return tokenString, nil
 }
 
-func (uu *UserUsecase) Login(user_email string, password string) (string, error) {
-	user, err := uu.userRepository.GetUserByEmail(user_email)
+func (uu *UserUsecase) Login(userEmail string, password string) (string, error) {
+	user, err := uu.userRepository.GetUserByEmail(userEmail)
 
 	if err != nil {
 		return "", err
