@@ -1,7 +1,9 @@
 package main
 
 import (
+	"log"
 	"github.com/gin-gonic/gin"
+	"github.com/thebiatriz/go-db-api/internal/auth"
 	"github.com/thebiatriz/go-db-api/internal/database"
 	"github.com/thebiatriz/go-db-api/internal/handlers"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
@@ -14,7 +16,13 @@ func main() {
 	dbConnection, err := database.ConnectDB()
 
 	if err != nil {
-		panic(err)
+		log.Fatalf("Erro ao conectar ao banco de dados: %v", err)
+	}
+
+	jwtService, err := auth.NewJWTService()
+
+	if err != nil {
+		log.Fatalf("Erro ao inicializar o serviço do JWT: %v", err)
 	}
 
 	ProductRepository := repositories.NewProductRepository(dbConnection)
@@ -22,14 +30,14 @@ func main() {
 	ProductHandler := handlers.NewProductHandler(ProductUseCase)
 
 	UserRepository := repositories.NewUserRepository(dbConnection)
-	UserUsecase := usecases.NewUserUsecase(UserRepository)
+	UserUsecase := usecases.NewUserUsecase(UserRepository, jwtService)
 	UserHandler := handlers.NewUserHandler(UserUsecase)
 
 	router.POST("/users", UserHandler.CreateUser)
 	router.POST("/login", UserHandler.Login)
 
 	protected := router.Group("/")
-	protected.Use(handlers.AuthMiddleware())
+	protected.Use(handlers.AuthMiddleware(jwtService))
 
 	productRoutes := protected.Group("/products")
 	productRoutes.GET("/", ProductHandler.GetProducts)

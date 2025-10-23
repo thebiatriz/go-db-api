@@ -3,12 +3,10 @@ package usecases
 import (
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt"
+	"github.com/thebiatriz/go-db-api/internal/auth"
 	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
-	"os"
-	"time"
 )
 
 var (
@@ -19,31 +17,14 @@ var (
 
 type UserUsecase struct {
 	userRepository repositories.UserRepository
+	jwtService auth.JWTService
 }
 
-func NewUserUsecase(userRepository repositories.UserRepository) UserUsecase {
+func NewUserUsecase(userRepository repositories.UserRepository, jwtService auth.JWTService) UserUsecase {
 	return UserUsecase{
 		userRepository: userRepository,
+		jwtService: jwtService,
 	}
-}
-
-func generateToken(userId int, userRole string) (string, error) {
-	secretKey := []byte(os.Getenv("SECRET_JWT"))
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
-		jwt.MapClaims{
-			"user_id": userId,
-			"role":    userRole,
-			"exp":     time.Now().Add(time.Hour * 12).Unix(),
-		})
-
-	tokenString, err := token.SignedString(secretKey)
-
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
 }
 
 func (uu *UserUsecase) Login(userEmail string, password string) (string, error) {
@@ -63,7 +44,7 @@ func (uu *UserUsecase) Login(userEmail string, password string) (string, error) 
 		return "", ErrInvalidCredentials
 	}
 
-	token, err := generateToken(user.ID, user.Role)
+	token, err := uu.jwtService.GenerateToken(user.ID, user.Role)
 
 	if err != nil {
 		return "", fmt.Errorf("erro interno ao gerar o token: %w", err)

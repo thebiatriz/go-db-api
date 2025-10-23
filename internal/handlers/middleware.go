@@ -3,16 +3,15 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"os"
 	"strings"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/thebiatriz/go-db-api/internal/auth"
 	"github.com/thebiatriz/go-db-api/internal/models"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(jwtService auth.JWTService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		secretKey := []byte(os.Getenv("SECRET_JWT"))
 		authHeader := c.GetHeader("Authorization")
 
 		if authHeader == "" {
@@ -35,9 +34,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return secretKey, nil
-		})
+		token, err := jwtService.ValidateToken(tokenString)
 
 		if err != nil {
 			response := models.Response{
