@@ -27,6 +27,30 @@ func (u UserHandler) Login(c *gin.Context) {
 	err := c.BindJSON(&req)
 
 	if err != nil {
+		var validationErrs validator.ValidationErrors
+		var wrongTag string
+
+		if errors.As(err, &validationErrs) {
+			firstError := validationErrs[0]
+
+			switch firstError.Tag() {
+			case "email":
+				wrongTag = "formato do email inválido"
+			case "required":
+				wrongTag = "campo obrigatório ausente"
+			default:
+				wrongTag = fmt.Sprintf("regra '%s'", firstError.Tag())
+			}
+
+			errorMessage := fmt.Sprintf("Erro no campo '%s': falhou na regra '%s'", firstError.Field(), wrongTag)
+
+			response := models.Response{
+				Message: errorMessage,
+			}
+			c.IndentedJSON(http.StatusBadRequest, response)
+			return
+		}
+
 		response := models.Response{
 			Message: "Ocorreu um erro ao receber os dados na requisição",
 		}
