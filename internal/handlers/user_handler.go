@@ -339,7 +339,7 @@ func (u UserHandler) UpdateUser(c *gin.Context) {
 }
 
 func (u UserHandler) GetMe(c *gin.Context) {
-	requesterIdStr, exists := c.Get("userId")
+	userIdStr, exists := c.Get("userId")
 
 	if !exists {
 		response := models.Response{
@@ -349,7 +349,7 @@ func (u UserHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	requesterId, ok := requesterIdStr.(int)
+	userId, ok := userIdStr.(int)
 
 	if !ok {
 		response := models.Response{
@@ -359,7 +359,7 @@ func (u UserHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	currentUser, err := u.userUsecase.GetUserById(requesterId)
+	currentUser, err := u.userUsecase.GetUserById(userId)
 
 	if err != nil {
 		if errors.Is(err, usecases.ErrUserNotFound) {
@@ -378,4 +378,74 @@ func (u UserHandler) GetMe(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, currentUser)
+}
+
+func (u UserHandler) DeleteMe(c *gin.Context) {
+	userIdStr, exists := c.Get("userId")
+
+	if !exists {
+		response := models.Response{
+			Message: "Não foi possível identificar o usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	userId, ok := userIdStr.(int)
+
+	if !ok {
+		response := models.Response{
+			Message: "Formato inválido do id do usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	userRoleStr, exists := c.Get("userRole")
+
+	if !exists {
+		response := models.Response{
+			Message: "Não foi possível identificar a permissão do usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	userRole, ok := userRoleStr.(string)
+
+	if !ok {
+		response := models.Response{
+			Message: "Formato inválido da permissão do usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	err := u.userUsecase.DeleteUser(userId, userId, userRole)
+
+	if err != nil {
+		if errors.Is(err, repositories.ErrUserNotFound) {
+			response := models.Response{
+				Message: "O usuário não foi encontrado na base de dados",
+			}
+			c.IndentedJSON(http.StatusNotFound, response)
+			return
+		}
+
+		if errors.Is(err, usecases.ErrNotAuthorized) {
+			response := models.Response{
+				Message: "Você não tem permissão para deletar esse usuário",
+			}
+			c.IndentedJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		response := models.Response{
+			Message: "Ocorreu um erro interno no servidor",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

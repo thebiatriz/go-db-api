@@ -37,7 +37,7 @@ func main() {
 	router.POST("/login", UserHandler.Login)
 
 	protected := router.Group("/")
-	protected.Use(handlers.AuthMiddleware(jwtService))
+	protected.Use(handlers.AuthMiddleware(jwtService, UserRepository))
 
 	productRoutes := protected.Group("/products")
 	productRoutes.GET("/", ProductHandler.GetProducts)
@@ -50,6 +50,7 @@ func main() {
 	userRoutes.GET("/me", UserHandler.GetMe)
 	userRoutes.GET("/", UserHandler.GetUsers)
 	userRoutes.GET("/:id", UserHandler.GetUserById)
+	userRoutes.DELETE("/me", UserHandler.DeleteMe)
 	userRoutes.DELETE("/:id", UserHandler.DeleteUser)
 	userRoutes.PUT("/:id", UserHandler.UpdateUser)
 

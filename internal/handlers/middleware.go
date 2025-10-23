@@ -8,9 +8,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/thebiatriz/go-db-api/internal/auth"
 	"github.com/thebiatriz/go-db-api/internal/models"
+	"github.com/thebiatriz/go-db-api/internal/repositories"
 )
 
-func AuthMiddleware(jwtService auth.JWTService) gin.HandlerFunc {
+func AuthMiddleware(jwtService auth.JWTService, userRepository repositories.UserRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
@@ -52,6 +53,24 @@ func AuthMiddleware(jwtService auth.JWTService) gin.HandlerFunc {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			userId := int(claims["user_id"].(float64))
 			userRole := claims["role"].(string)
+
+			user, err := userRepository.GetUserById(userId)
+
+			if err != nil {
+				response := models.Response{
+					Message: "Erro ao verificar o usuário",
+				}
+				c.AbortWithStatusJSON(http.StatusInternalServerError, response)
+				return
+			}
+
+			if user == nil {
+				response := models.Response{
+					Message: "Usuário que realizou a requisição não existe na base de dados",
+				}
+				c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+				return
+			}
 
 			c.Set("userId", userId)
 			c.Set("userRole", userRole)
