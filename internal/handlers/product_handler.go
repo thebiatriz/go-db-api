@@ -108,14 +108,6 @@ func (p *productHandler) CreateProduct(c *gin.Context) {
 func (p *productHandler) GetProductById(c *gin.Context) {
 	id := c.Param("id")
 
-	if id == "" {
-		response := models.Response{
-			Message: "Id do produto não pode ser nulo",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
-		return
-	}
-
 	productId, err := strconv.Atoi(id)
 
 	if err != nil {
@@ -150,13 +142,6 @@ func (p *productHandler) GetProductById(c *gin.Context) {
 func (p *productHandler) DeleteProduct(c *gin.Context) {
 	id := c.Param("id")
 
-	if id == "" {
-		response := models.Response{
-			Message: "Id do produto não pode ser nulo",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
-		return
-	}
 	productId, err := strconv.Atoi(id)
 
 	if err != nil {
@@ -221,14 +206,6 @@ func (p *productHandler) DeleteProduct(c *gin.Context) {
 func (p *productHandler) UpdateProduct(c *gin.Context) {
 	var req models.UpdateProductRequest
 	id := c.Param("id")
-
-	if id == "" {
-		response := models.Response{
-			Message: "Id do produto não pode ser nulo",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
-		return
-	}
 
 	targetId, err := strconv.Atoi(id)
 

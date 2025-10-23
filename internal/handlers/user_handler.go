@@ -81,14 +81,6 @@ func (u UserHandler) GetUsers(c *gin.Context) {
 func (u UserHandler) GetUserById(c *gin.Context) {
 	id := c.Param("id")
 
-	if id == "" {
-		response := models.Response{
-			Message: "Id não pode estar vazio",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
-		return
-	}
-
 	userId, err := strconv.Atoi(id)
 
 	if err != nil {
@@ -189,14 +181,6 @@ func (u UserHandler) CreateUser(c *gin.Context) {
 func (u UserHandler) DeleteUser(c *gin.Context) {
 	targetId := c.Param("id")
 
-	if targetId == "" {
-		response := models.Response{
-			Message: "Id não pode estar vazio",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
-		return
-	}
-
 	targetUserId, err := strconv.Atoi(targetId)
 
 	if err != nil {
@@ -260,14 +244,6 @@ func (u UserHandler) DeleteUser(c *gin.Context) {
 func (u UserHandler) UpdateUser(c *gin.Context) {
 	var req models.UpdateUserRequest
 	targetId := c.Param("id")
-
-	if targetId == "" {
-		response := models.Response{
-			Message: "Id não pode estar vazio",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
-		return
-	}
 
 	targetUserId, err := strconv.Atoi(targetId)
 
