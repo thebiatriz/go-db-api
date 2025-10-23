@@ -52,6 +52,7 @@ func main() {
 	userRoutes.GET("/:id", UserHandler.GetUserById)
 	userRoutes.DELETE("/me", UserHandler.DeleteMe)
 	userRoutes.DELETE("/:id", UserHandler.DeleteUser)
+	userRoutes.PUT("/me", UserHandler.UpdateMe)
 	userRoutes.PUT("/:id", UserHandler.UpdateUser)
 
 	router.Run(":8080")
