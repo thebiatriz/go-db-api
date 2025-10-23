@@ -1,13 +1,13 @@
 package main
 
 import (
-	"log"
 	"github.com/gin-gonic/gin"
 	"github.com/thebiatriz/go-db-api/internal/auth"
 	"github.com/thebiatriz/go-db-api/internal/database"
 	"github.com/thebiatriz/go-db-api/internal/handlers"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
 	"github.com/thebiatriz/go-db-api/internal/usecases"
+	"log"
 )
 
 func main() {
@@ -47,6 +47,7 @@ func main() {
 	productRoutes.PUT("/:id", ProductHandler.UpdateProduct)
 
 	userRoutes := protected.Group("/users")
+	userRoutes.GET("/me", UserHandler.GetMe)
 	userRoutes.GET("/", UserHandler.GetUsers)
 	userRoutes.GET("/:id", UserHandler.GetUserById)
 	userRoutes.DELETE("/:id", UserHandler.DeleteUser)

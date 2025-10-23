@@ -57,11 +57,15 @@ func (uu *UserUsecase) GetUsers() ([]models.User, error) {
 	return uu.userRepository.GetUsers()
 }
 
-func (uu UserUsecase) GetUserById(id_user int) (*models.User, error) {
-	user, err := uu.userRepository.GetUserById(id_user)
+func (uu UserUsecase) GetUserById(userId int) (*models.User, error) {
+	user, err := uu.userRepository.GetUserById(userId)
 
 	if err != nil {
 		return nil, err
+	}
+
+	if user == nil {
+		return nil, ErrUserNotFound
 	}
 
 	return user, nil

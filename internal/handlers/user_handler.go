@@ -94,18 +94,18 @@ func (u UserHandler) GetUserById(c *gin.Context) {
 	user, err := u.userUsecase.GetUserById(userId)
 
 	if err != nil {
+		if errors.Is(err, usecases.ErrUserNotFound) {
+			response := models.Response{
+				Message: "O usuário não foi encontrado na base de dados",
+			}
+			c.IndentedJSON(http.StatusNotFound, response)
+			return
+		}
+
 		response := models.Response{
 			Message: "Ocorreu um erro interno no servidor",
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
-		return
-	}
-
-	if user == nil {
-		response := models.Response{
-			Message: "O usuário não foi encontrado na base de dados",
-		}
-		c.IndentedJSON(http.StatusNotFound, response)
 		return
 	}
 
@@ -336,4 +336,46 @@ func (u UserHandler) UpdateUser(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, updatedUser)
+}
+
+func (u UserHandler) GetMe(c *gin.Context) {
+	requesterIdStr, exists := c.Get("userId")
+
+	if !exists {
+		response := models.Response{
+			Message: "Não foi possível identificar o usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	requesterId, ok := requesterIdStr.(int)
+
+	if !ok {
+		response := models.Response{
+			Message: "Formato inválido do id do usuário",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	currentUser, err := u.userUsecase.GetUserById(requesterId)
+
+	if err != nil {
+		if errors.Is(err, usecases.ErrUserNotFound) {
+			response := models.Response{
+				Message: "O usuário não foi encontrado na base de dados",
+			}
+			c.IndentedJSON(http.StatusNotFound, response)
+			return
+		}
+
+		response := models.Response{
+			Message: "Ocorreu um erro interno no servidor",
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, currentUser)
 }
