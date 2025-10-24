@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/thebiatriz/go-db-api/internal/models"
-	"github.com/thebiatriz/go-db-api/internal/repositories"
 	"github.com/thebiatriz/go-db-api/internal/usecases"
 )
 
@@ -67,7 +66,7 @@ func handleDomainError(c *gin.Context, err error) {
 	case errors.Is(err, usecases.ErrNotAuthorized):
 		c.AbortWithStatusJSON(http.StatusForbidden, models.Response{Message: msgUnauthorized})
 
-	case errors.Is(err, repositories.ErrEmailAlreadyExists):
+	case errors.Is(err, usecases.ErrEmailAlreadyExists):
 		c.AbortWithStatusJSON(http.StatusConflict, models.Response{Message: "O email inserido já está cadastrado na base de dados"})
 
 	default:
