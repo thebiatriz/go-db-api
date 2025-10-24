@@ -1,9 +1,13 @@
 package usecases
 
 import (
+	"errors"
+
 	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
 )
+
+var ErrProductNotFound = errors.New("o usuário não existe na base de dados")
 
 type ProductUsecase struct {
 	productRepository repositories.ProductRepository
@@ -38,6 +42,10 @@ func (pu *ProductUsecase) GetProductById(productId int) (*models.Product, error)
 		return nil, err
 	}
 
+	if product == nil {
+		return nil, ErrProductNotFound
+	}
+
 	return product, nil
 }
 
@@ -47,7 +55,7 @@ func (pu *ProductUsecase) DeleteProduct(productId int, requesterId int, requeste
 		return err
 	}
 	if productToDelete == nil {
-		return repositories.ErrProductNotFound
+		return ErrProductNotFound
 	}
 
 	isAdmin := requesterRole == "admin"
@@ -59,6 +67,9 @@ func (pu *ProductUsecase) DeleteProduct(productId int, requesterId int, requeste
 
 	err = pu.productRepository.DeleteProduct(productId)
 	if err != nil {
+		if errors.Is(err, repositories.ErrProductNotFound) {
+			return ErrProductNotFound
+		}
 		return err
 	}
 
@@ -72,7 +83,7 @@ func (pu *ProductUsecase) UpdateProduct(targetId, requesterId int, req models.Up
 	}
 
 	if productToUpdate == nil {
-		return nil, repositories.ErrProductNotFound
+		return nil, ErrProductNotFound
 	}
 
 	isOwner := productToUpdate.UserID == requesterId
@@ -92,6 +103,9 @@ func (pu *ProductUsecase) UpdateProduct(targetId, requesterId int, req models.Up
 	err = pu.productRepository.UpdateProduct(*productToUpdate, requesterId)
 
 	if err != nil {
+		if errors.Is(err, repositories.ErrProductNotFound) {
+			return nil, ErrProductNotFound
+		}
 		return nil, err
 	}
 

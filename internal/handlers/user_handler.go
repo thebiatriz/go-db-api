@@ -1,15 +1,12 @@
 package handlers
 
 import (
-	"errors"
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
-	"github.com/thebiatriz/go-db-api/internal/models"
-	"github.com/thebiatriz/go-db-api/internal/repositories"
-	"github.com/thebiatriz/go-db-api/internal/usecases"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/thebiatriz/go-db-api/internal/models"
+	"github.com/thebiatriz/go-db-api/internal/usecases"
 )
 
 type UserHandler struct {
@@ -27,61 +24,14 @@ func (u UserHandler) Login(c *gin.Context) {
 	err := c.BindJSON(&req)
 
 	if err != nil {
-		var validationErrs validator.ValidationErrors
-		var wrongTag string
-
-		if errors.As(err, &validationErrs) {
-			firstError := validationErrs[0]
-
-			switch firstError.Tag() {
-			case "email":
-				wrongTag = "formato do email inválido"
-			case "required":
-				wrongTag = "campo obrigatório ausente"
-			default:
-				wrongTag = fmt.Sprintf("regra '%s'", firstError.Tag())
-			}
-
-			errorMessage := fmt.Sprintf("Erro no campo '%s': falhou na regra '%s'", firstError.Field(), wrongTag)
-
-			response := models.Response{
-				Message: errorMessage,
-			}
-			c.IndentedJSON(http.StatusBadRequest, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro ao receber os dados na requisição",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
+		handlePayloadErrors(c, err)
 		return
 	}
 
 	token, err := u.userUsecase.Login(req.Email, req.Password)
 
 	if err != nil {
-		if errors.Is(err, usecases.ErrInvalidCredentials) {
-			response := models.Response{
-				Message: "Senha inválida",
-			}
-			c.IndentedJSON(http.StatusBadRequest, response)
-			return
-		}
-
-		if errors.Is(err, usecases.ErrUserNotFound) {
-			response := models.Response{
-				Message: "O usuário não foi encontrado na base de dados",
-			}
-			c.IndentedJSON(http.StatusNotFound, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro interno no servidor",
-		}
-
-		c.IndentedJSON(http.StatusInternalServerError, response)
+		handleDomainError(c, err)
 		return
 	}
 
@@ -92,10 +42,7 @@ func (u UserHandler) GetUsers(c *gin.Context) {
 	users, err := u.userUsecase.GetUsers()
 
 	if err != nil {
-		response := models.Response{
-			Message: "Ocorreu um erro interno no servidor",
-		}
-		c.IndentedJSON(http.StatusInternalServerError, response)
+		handleDomainError(c, err)
 		return
 	}
 
@@ -109,7 +56,7 @@ func (u UserHandler) GetUserById(c *gin.Context) {
 
 	if err != nil {
 		response := models.Response{
-			Message: "Id precisa ser um número",
+			Message: msgInvalidIDNumeric,
 		}
 		c.IndentedJSON(http.StatusBadRequest, response)
 		return
@@ -118,18 +65,7 @@ func (u UserHandler) GetUserById(c *gin.Context) {
 	user, err := u.userUsecase.GetUserById(userId)
 
 	if err != nil {
-		if errors.Is(err, usecases.ErrUserNotFound) {
-			response := models.Response{
-				Message: "O usuário não foi encontrado na base de dados",
-			}
-			c.IndentedJSON(http.StatusNotFound, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro interno no servidor",
-		}
-		c.IndentedJSON(http.StatusInternalServerError, response)
+		handleDomainError(c, err)
 		return
 	}
 
@@ -142,36 +78,7 @@ func (u UserHandler) CreateUser(c *gin.Context) {
 	err := c.BindJSON(&req)
 
 	if err != nil {
-		var validationErrs validator.ValidationErrors
-		var wrongTag string
-
-		if errors.As(err, &validationErrs) {
-			firstError := validationErrs[0]
-
-			switch firstError.Tag() {
-			case "min":
-				wrongTag = "tamanho mínimo insuficiente"
-			case "email":
-				wrongTag = "formato do email inválido"
-			case "required":
-				wrongTag = "campo obrigatório ausente"
-			default:
-				wrongTag = fmt.Sprintf("regra '%s'", firstError.Tag())
-			}
-
-			errorMessage := fmt.Sprintf("Erro no campo '%s': falhou na regra '%s'", firstError.Field(), wrongTag)
-
-			response := models.Response{
-				Message: errorMessage,
-			}
-			c.IndentedJSON(http.StatusBadRequest, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro ao receber os dados na requisição",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
+		handlePayloadErrors(c, err)
 		return
 	}
 
@@ -184,18 +91,7 @@ func (u UserHandler) CreateUser(c *gin.Context) {
 	newUser, err := u.userUsecase.CreateUser(userToCreate)
 
 	if err != nil {
-		if errors.Is(err, repositories.ErrEmailAlreadyExists) {
-			response := models.Response{
-				Message: "O email inserido já está cadastrado na base de dados",
-			}
-			c.IndentedJSON(http.StatusConflict, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro interno no servidor",
-		}
-		c.IndentedJSON(http.StatusInternalServerError, response)
+		handleDomainError(c, err)
 		return
 	}
 
@@ -209,7 +105,7 @@ func (u UserHandler) DeleteUser(c *gin.Context) {
 
 	if err != nil {
 		response := models.Response{
-			Message: "Id precisa ser um número",
+			Message: msgInvalidIDNumeric,
 		}
 		c.IndentedJSON(http.StatusBadRequest, response)
 		return
@@ -218,46 +114,43 @@ func (u UserHandler) DeleteUser(c *gin.Context) {
 	requesterIdStr, exists := c.Get("userId")
 	if !exists {
 		response := models.Response{
-			Message: "Não foi possível identificar o usuário",
+			Message: msgUserIDMissing,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
-	requesterId := requesterIdStr.(int)
+
+	requesterId, ok := requesterIdStr.(int)
+	if !ok {
+		response := models.Response{
+			Message: msgInvalidIDFormat,
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
 
 	requesterRoleStr, exists := c.Get("userRole")
 	if !exists {
 		response := models.Response{
-			Message: "Não foi possível identificar a permissão do usuário",
+			Message: msgUserRoleMissing,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
-	requesterRole := requesterRoleStr.(string)
+
+	requesterRole, ok := requesterRoleStr.(string)
+	if !ok {
+		response := models.Response{
+			Message: msgInvalidRoleFormat,
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
 
 	err = u.userUsecase.DeleteUser(targetUserId, requesterId, requesterRole)
 
 	if err != nil {
-		if errors.Is(err, repositories.ErrUserNotFound) {
-			response := models.Response{
-				Message: "O usuário não foi encontrado na base de dados",
-			}
-			c.IndentedJSON(http.StatusNotFound, response)
-			return
-		}
-
-		if errors.Is(err, usecases.ErrNotAuthorized) {
-			response := models.Response{
-				Message: "Você não tem permissão para deletar esse usuário",
-			}
-			c.IndentedJSON(http.StatusUnauthorized, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro interno no servidor",
-		}
-		c.IndentedJSON(http.StatusInternalServerError, response)
+		handleDomainError(c, err)
 		return
 	}
 
@@ -273,7 +166,7 @@ func (u UserHandler) UpdateUser(c *gin.Context) {
 
 	if err != nil {
 		response := models.Response{
-			Message: "Id precisa ser um número",
+			Message: msgInvalidIDNumeric,
 		}
 		c.IndentedJSON(http.StatusBadRequest, response)
 		return
@@ -282,80 +175,50 @@ func (u UserHandler) UpdateUser(c *gin.Context) {
 	requesterIdStr, exists := c.Get("userId")
 	if !exists {
 		response := models.Response{
-			Message: "Não foi possível identificar o usuário",
+			Message: msgUserIDMissing,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
-	requesterId := requesterIdStr.(int)
+
+	requesterId, ok := requesterIdStr.(int)
+	if !ok {
+		response := models.Response{
+			Message: msgInvalidIDFormat,
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
 
 	requesterRoleStr, exists := c.Get("userRole")
 	if !exists {
 		response := models.Response{
-			Message: "Não foi possível identificar a permissão do usuário",
+			Message: msgUserRoleMissing,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
-	requesterRole := requesterRoleStr.(string)
+
+	requesterRole, ok := requesterRoleStr.(string)
+	if !ok {
+		response := models.Response{
+			Message: msgInvalidRoleFormat,
+		}
+		c.IndentedJSON(http.StatusInternalServerError, response)
+		return
+	}
 
 	err = c.BindJSON(&req)
 
 	if err != nil {
-		var validationErrs validator.ValidationErrors
-		var wrongTag string
-
-		if errors.As(err, &validationErrs) {
-			firstError := validationErrs[0]
-
-			switch firstError.Tag() {
-			case "min":
-				wrongTag = "tamanho mínimo insuficiente"
-			case "email":
-				wrongTag = "formato do email inválido"
-			default:
-				wrongTag = fmt.Sprintf("regra '%s'", firstError.Tag())
-			}
-
-			errorMessage := fmt.Sprintf("Erro no campo '%s': falhou na regra '%s'", firstError.Field(), wrongTag)
-
-			response := models.Response{
-				Message: errorMessage,
-			}
-			c.IndentedJSON(http.StatusBadRequest, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro ao receber os dados na requisição",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
+		handlePayloadErrors(c, err)
 		return
 	}
 
 	updatedUser, err := u.userUsecase.UpdateUser(targetUserId, requesterId, requesterRole, req)
 
 	if err != nil {
-		if errors.Is(err, repositories.ErrUserNotFound) {
-			response := models.Response{
-				Message: "O usuário não foi encontrado na base de dados",
-			}
-			c.IndentedJSON(http.StatusNotFound, response)
-			return
-		}
-
-		if errors.Is(err, usecases.ErrNotAuthorized) {
-			response := models.Response{
-				Message: "Você não tem permissão para atualizar esse usuário",
-			}
-			c.IndentedJSON(http.StatusUnauthorized, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro interno no servidor",
-		}
-		c.IndentedJSON(http.StatusInternalServerError, response)
+		handleDomainError(c, err)
 		return
 	}
 
@@ -367,7 +230,7 @@ func (u UserHandler) GetMe(c *gin.Context) {
 
 	if !exists {
 		response := models.Response{
-			Message: "Não foi possível identificar o usuário",
+			Message: msgUserIDMissing,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
@@ -377,7 +240,7 @@ func (u UserHandler) GetMe(c *gin.Context) {
 
 	if !ok {
 		response := models.Response{
-			Message: "Formato inválido do id do usuário",
+			Message: msgInvalidIDFormat,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
@@ -386,18 +249,7 @@ func (u UserHandler) GetMe(c *gin.Context) {
 	currentUser, err := u.userUsecase.GetUserById(userId)
 
 	if err != nil {
-		if errors.Is(err, usecases.ErrUserNotFound) {
-			response := models.Response{
-				Message: "O usuário não foi encontrado na base de dados",
-			}
-			c.IndentedJSON(http.StatusNotFound, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro interno no servidor",
-		}
-		c.IndentedJSON(http.StatusInternalServerError, response)
+		handleDomainError(c, err)
 		return
 	}
 
@@ -409,7 +261,7 @@ func (u UserHandler) DeleteMe(c *gin.Context) {
 
 	if !exists {
 		response := models.Response{
-			Message: "Não foi possível identificar o usuário",
+			Message: msgUserIDMissing,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
@@ -419,27 +271,25 @@ func (u UserHandler) DeleteMe(c *gin.Context) {
 
 	if !ok {
 		response := models.Response{
-			Message: "Formato inválido do id do usuário",
+			Message: msgInvalidIDFormat,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	userRoleStr, exists := c.Get("userRole")
-
 	if !exists {
 		response := models.Response{
-			Message: "Não foi possível identificar a permissão do usuário",
+			Message: msgUserRoleMissing,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	userRole, ok := userRoleStr.(string)
-
 	if !ok {
 		response := models.Response{
-			Message: "Formato inválido da permissão do usuário",
+			Message: msgInvalidRoleFormat,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
@@ -448,26 +298,7 @@ func (u UserHandler) DeleteMe(c *gin.Context) {
 	err := u.userUsecase.DeleteUser(userId, userId, userRole)
 
 	if err != nil {
-		if errors.Is(err, repositories.ErrUserNotFound) {
-			response := models.Response{
-				Message: "O usuário não foi encontrado na base de dados",
-			}
-			c.IndentedJSON(http.StatusNotFound, response)
-			return
-		}
-
-		if errors.Is(err, usecases.ErrNotAuthorized) {
-			response := models.Response{
-				Message: "Você não tem permissão para deletar esse usuário",
-			}
-			c.IndentedJSON(http.StatusUnauthorized, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro interno no servidor",
-		}
-		c.IndentedJSON(http.StatusInternalServerError, response)
+		handleDomainError(c, err)
 		return
 	}
 
@@ -480,37 +311,34 @@ func (u UserHandler) UpdateMe(c *gin.Context) {
 
 	if !exists {
 		response := models.Response{
-			Message: "Não foi possível identificar o usuário",
+			Message: msgUserIDMissing,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	userId, ok := userIdStr.(int)
-
 	if !ok {
 		response := models.Response{
-			Message: "Formato inválido do id do usuário",
+			Message: msgInvalidIDFormat,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	userRoleStr, exists := c.Get("userRole")
-
 	if !exists {
 		response := models.Response{
-			Message: "Não foi possível identificar a permissão do usuário",
+			Message: msgUserRoleMissing,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	userRole, ok := userRoleStr.(string)
-
 	if !ok {
 		response := models.Response{
-			Message: "Formato inválido da permissão do usuário",
+			Message: msgInvalidRoleFormat,
 		}
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
@@ -519,60 +347,14 @@ func (u UserHandler) UpdateMe(c *gin.Context) {
 	err := c.BindJSON(&req)
 
 	if err != nil {
-		var validationErrs validator.ValidationErrors
-		var wrongTag string
-
-		if errors.As(err, &validationErrs) {
-			firstError := validationErrs[0]
-
-			switch firstError.Tag() {
-			case "min":
-				wrongTag = "tamanho mínimo insuficiente"
-			case "email":
-				wrongTag = "formato do email inválido"
-			default:
-				wrongTag = fmt.Sprintf("regra '%s'", firstError.Tag())
-			}
-
-			errorMessage := fmt.Sprintf("Erro no campo '%s': falhou na regra '%s'", firstError.Field(), wrongTag)
-
-			response := models.Response{
-				Message: errorMessage,
-			}
-			c.IndentedJSON(http.StatusBadRequest, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro ao receber os dados na requisição",
-		}
-		c.IndentedJSON(http.StatusBadRequest, response)
+		handlePayloadErrors(c, err)
 		return
 	}
 
 	updatedUser, err := u.userUsecase.UpdateUser(userId, userId, userRole, req)
 
 	if err != nil {
-		if errors.Is(err, repositories.ErrUserNotFound) {
-			response := models.Response{
-				Message: "O usuário não foi encontrado na base de dados",
-			}
-			c.IndentedJSON(http.StatusNotFound, response)
-			return
-		}
-
-		if errors.Is(err, usecases.ErrNotAuthorized) {
-			response := models.Response{
-				Message: "Você não tem permissão para atualizar esse usuário",
-			}
-			c.IndentedJSON(http.StatusUnauthorized, response)
-			return
-		}
-
-		response := models.Response{
-			Message: "Ocorreu um erro interno no servidor",
-		}
-		c.IndentedJSON(http.StatusInternalServerError, response)
+		handleDomainError(c, err)
 		return
 	}
 
