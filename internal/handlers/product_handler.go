@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/thebiatriz/go-db-api/internal/models"
@@ -57,6 +58,8 @@ func (p *productHandler) CreateProduct(c *gin.Context) {
 		handlePayloadErrors(c, err)
 		return
 	}
+
+	req.Name = strings.TrimSpace(req.Name)
 
 	productToCreate := models.Product{
 		Name:   req.Name,
@@ -118,7 +121,7 @@ func (p *productHandler) DeleteProduct(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, response)
 		return
 	}
-	
+
 	requesterId, ok := requesterIdStr.(int)
 	if !ok {
 		response := models.Response{
@@ -176,6 +179,10 @@ func (p *productHandler) UpdateProduct(c *gin.Context) {
 	if err != nil {
 		handlePayloadErrors(c, err)
 		return
+	}
+
+	if req.Name != nil {
+		*req.Name = strings.TrimSpace(*req.Name)
 	}
 
 	requesterIdStr, exists := c.Get("userId")

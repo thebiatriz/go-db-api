@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/thebiatriz/go-db-api/internal/models"
@@ -81,6 +82,9 @@ func (u UserHandler) CreateUser(c *gin.Context) {
 		handlePayloadErrors(c, err)
 		return
 	}
+
+	req.Name = strings.TrimSpace(req.Name)
+	req.Email = strings.TrimSpace(req.Email)
 
 	userToCreate := models.User{
 		Name:     req.Name,
@@ -213,6 +217,14 @@ func (u UserHandler) UpdateUser(c *gin.Context) {
 	if err != nil {
 		handlePayloadErrors(c, err)
 		return
+	}
+
+	if req.Name != nil {
+		*req.Name = strings.TrimSpace(*req.Name)
+	}
+
+	if req.Email != nil {
+		*req.Email = strings.TrimSpace(*req.Email)
 	}
 
 	updatedUser, err := u.userUsecase.UpdateUser(targetUserId, requesterId, requesterRole, req)
@@ -349,6 +361,14 @@ func (u UserHandler) UpdateMe(c *gin.Context) {
 	if err != nil {
 		handlePayloadErrors(c, err)
 		return
+	}
+
+	if req.Name != nil {
+		*req.Name = strings.TrimSpace(*req.Name)
+	}
+
+	if req.Email != nil {
+		*req.Email = strings.TrimSpace(*req.Email)
 	}
 
 	updatedUser, err := u.userUsecase.UpdateUser(userId, userId, userRole, req)
