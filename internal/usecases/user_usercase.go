@@ -3,7 +3,7 @@ package usecases
 import (
 	"errors"
 	"fmt"
-	
+
 	"github.com/thebiatriz/go-db-api/internal/auth"
 	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
@@ -14,6 +14,7 @@ var (
 	ErrUserNotFound       = errors.New("o usuário não existe na base de dados")
 	ErrInvalidCredentials = errors.New("senha inválida")
 	ErrNotAuthorized      = errors.New("não autorizado para modificação")
+	ErrEmailAlreadyExists = errors.New("o email inserido já está cadastrado")
 )
 
 type UserUsecase struct {
@@ -82,6 +83,9 @@ func (uu *UserUsecase) CreateUser(user models.User) (*models.User, error) {
 
 	userId, err := uu.userRepository.CreateUser(user)
 	if err != nil {
+		if errors.Is(err, repositories.ErrEmailAlreadyExists) {
+			return nil, ErrEmailAlreadyExists
+		}
 		return nil, err
 	}
 
@@ -140,6 +144,9 @@ func (uu UserUsecase) UpdateUser(targetUserId, requesterId int, requesterRole st
 	if err != nil {
 		if errors.Is(err, repositories.ErrUserNotFound) {
 			return nil, ErrUserNotFound
+		}
+		if errors.Is(err, repositories.ErrEmailAlreadyExists) {
+			return nil, ErrEmailAlreadyExists
 		}
 		return nil, err
 	}

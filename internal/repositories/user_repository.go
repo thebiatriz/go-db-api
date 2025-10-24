@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	
+
 	"github.com/lib/pq"
 	"github.com/thebiatriz/go-db-api/internal/models"
 )
@@ -128,6 +128,11 @@ func (ur UserRepository) UpdateUser(user models.User) error {
 	result, err := ur.connection.Exec(query, user.Name, user.Email, user.ID)
 
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "23505" {
+				return ErrEmailAlreadyExists
+			}
+		}
 		fmt.Println(err)
 		return err
 	}
