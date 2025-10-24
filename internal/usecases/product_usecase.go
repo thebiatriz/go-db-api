@@ -31,8 +31,8 @@ func (pu *ProductUsecase) CreateProduct(product models.Product) (*models.Product
 	return &product, nil
 }
 
-func (pu *ProductUsecase) GetProductById(id_product int) (*models.Product, error) {
-	product, err := pu.productRepository.GetProductById(id_product)
+func (pu *ProductUsecase) GetProductById(productId int) (*models.Product, error) {
+	product, err := pu.productRepository.GetProductById(productId)
 
 	if err != nil {
 		return nil, err
@@ -41,9 +41,23 @@ func (pu *ProductUsecase) GetProductById(id_product int) (*models.Product, error
 	return product, nil
 }
 
-func (pu *ProductUsecase) DeleteProduct(id_product int) error {
-	err := pu.productRepository.DeleteProduct(id_product)
+func (pu *ProductUsecase) DeleteProduct(productId int, requesterId int, requesterRole string) error {
+	productToDelete, err := pu.productRepository.GetProductById(productId)
+	if err != nil {
+		return err
+	}
+	if productToDelete == nil {
+		return repositories.ErrProductNotFound
+	}
 
+	isAdmin := requesterRole == "admin"
+	isOwner := requesterId == productToDelete.UserID
+
+	if !isAdmin && !isOwner {
+		return ErrNotAuthorized
+	}
+
+	err = pu.productRepository.DeleteProduct(productId)
 	if err != nil {
 		return err
 	}
@@ -51,12 +65,35 @@ func (pu *ProductUsecase) DeleteProduct(id_product int) error {
 	return nil
 }
 
-func (pu *ProductUsecase) UpdateProduct(product models.Product) (*models.Product, error) {
-	err := pu.productRepository.UpdateProduct(product)
+func (pu *ProductUsecase) UpdateProduct(targetId, requesterId int, req models.UpdateProductRequest) (*models.Product, error) {
+	productToUpdate, err := pu.productRepository.GetProductById(targetId)
+	if err != nil {
+		return nil, err
+	}
+
+	if productToUpdate == nil {
+		return nil, repositories.ErrProductNotFound
+	}
+
+	isOwner := productToUpdate.UserID == requesterId
+
+	if !isOwner {
+		return nil, ErrNotAuthorized
+	}
+
+	if req.Name != nil {
+		productToUpdate.Name = *req.Name
+	}
+
+	if req.Price != nil {
+		productToUpdate.Price = *req.Price
+	}
+
+	err = pu.productRepository.UpdateProduct(*productToUpdate, requesterId)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &product, nil
+	return productToUpdate, nil
 }
