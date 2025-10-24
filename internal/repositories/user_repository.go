@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	
 	"github.com/lib/pq"
 	"github.com/thebiatriz/go-db-api/internal/models"
 )

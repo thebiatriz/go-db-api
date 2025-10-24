@@ -1,13 +1,14 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/thebiatriz/go-db-api/internal/auth"
 	"github.com/thebiatriz/go-db-api/internal/database"
 	"github.com/thebiatriz/go-db-api/internal/handlers"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
 	"github.com/thebiatriz/go-db-api/internal/usecases"
-	"log"
 )
 
 func main() {

@@ -3,6 +3,7 @@ package usecases
 import (
 	"errors"
 	"fmt"
+	
 	"github.com/thebiatriz/go-db-api/internal/auth"
 	"github.com/thebiatriz/go-db-api/internal/models"
 	"github.com/thebiatriz/go-db-api/internal/repositories"
@@ -17,13 +18,13 @@ var (
 
 type UserUsecase struct {
 	userRepository repositories.UserRepository
-	jwtService auth.JWTService
+	jwtService     auth.JWTService
 }
 
 func NewUserUsecase(userRepository repositories.UserRepository, jwtService auth.JWTService) UserUsecase {
 	return UserUsecase{
 		userRepository: userRepository,
-		jwtService: jwtService,
+		jwtService:     jwtService,
 	}
 }
 
@@ -100,6 +101,9 @@ func (uu UserUsecase) DeleteUser(targetUserId, requesterId int, requesterRole st
 	err := uu.userRepository.DeleteUser(targetUserId)
 
 	if err != nil {
+		if errors.Is(err, repositories.ErrUserNotFound) {
+			return ErrUserNotFound
+		}
 		return err
 	}
 
@@ -134,6 +138,9 @@ func (uu UserUsecase) UpdateUser(targetUserId, requesterId int, requesterRole st
 	err = uu.userRepository.UpdateUser(*currentUser)
 
 	if err != nil {
+		if errors.Is(err, repositories.ErrUserNotFound) {
+			return nil, ErrUserNotFound
+		}
 		return nil, err
 	}
 
