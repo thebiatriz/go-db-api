@@ -22,9 +22,22 @@ func NewUserRepository(connection *sql.DB) UserRepository {
 	}
 }
 
-func (ur *UserRepository) GetUsers(limit, offset int) ([]models.User, error) {
-	query := "SELECT id, name, email, role FROM users LIMIT $1 OFFSET $2"
-	rows, err := ur.connection.Query(query, limit, offset)
+func (ur *UserRepository) GetUsers(limit, offset int, queryName string) ([]models.User, error) {
+	baseQuery := "SELECT id, name, email, role FROM users"
+	filterClause := ""
+	args := []any{}
+
+	if queryName != "" {
+		filterClause = " WHERE name ILIKE '%' || $1 || '%'"
+		args = append(args, queryName)
+	}
+
+	paginationClause := fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
+	args = append(args, limit, offset)
+
+	finalQuery := baseQuery + filterClause + paginationClause
+
+	rows, err := ur.connection.Query(finalQuery, args...)
 
 	if err != nil {
 		fmt.Println(err)

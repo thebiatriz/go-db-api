@@ -55,10 +55,10 @@ func (uu *UserUsecase) Login(userEmail string, password string) (string, error) 
 	return token, nil
 }
 
-func (uu *UserUsecase) GetUsers(page, limit int) ([]models.User, error) {
+func (uu *UserUsecase) GetUsers(page, limit int, queryName string) ([]models.User, error) {
 	offset := (page - 1) * limit
 
-	return uu.userRepository.GetUsers(limit, offset)
+	return uu.userRepository.GetUsers(limit, offset, queryName)
 }
 
 func (uu UserUsecase) GetUserById(userId int) (*models.User, error) {
