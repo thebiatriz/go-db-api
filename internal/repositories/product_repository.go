@@ -20,9 +20,22 @@ func NewProductRepository(connection *sql.DB) ProductRepository {
 	}
 }
 
-func (pr *ProductRepository) GetProducts(limit, offset int) ([]models.Product, error) {
-	query := "SELECT id, name, price, user_id FROM products LIMIT $1 OFFSET $2"
-	rows, err := pr.connection.Query(query, limit, offset)
+func (pr *ProductRepository) GetProducts(limit, offset int, queryName string) ([]models.Product, error) {
+	baseQuery := "SELECT id, name, price, user_id FROM products"
+	filterClause := ""
+	args := []any{}
+
+	if queryName != "" {
+		filterClause = " WHERE name ILIKE '%' || $1 || '%'"
+		args = append(args, queryName)
+	}
+
+	paginationClause := fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
+	args = append(args, limit, offset)
+
+	finalQuery := baseQuery + filterClause + paginationClause
+
+	rows, err := pr.connection.Query(finalQuery, args...)
 
 	if err != nil {
 		fmt.Println(err)

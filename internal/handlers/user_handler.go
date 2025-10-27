@@ -42,6 +42,7 @@ func (u UserHandler) Login(c *gin.Context) {
 func (u UserHandler) GetUsers(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
+	queryName := c.DefaultQuery("name", "")
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 {
@@ -57,7 +58,7 @@ func (u UserHandler) GetUsers(c *gin.Context) {
 		limit = 50
 	}
 
-	users, err := u.userUsecase.GetUsers(page, limit)
+	users, err := u.userUsecase.GetUsers(page, limit, queryName)
 
 	if err != nil {
 		handleDomainError(c, err)
