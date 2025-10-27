@@ -118,14 +118,9 @@ func (pr *ProductRepository) GetProductById(productId int) (*models.Product, err
 }
 
 func (pr *ProductRepository) DeleteProduct(productId int) error {
-	query, err := pr.connection.Prepare("DELETE FROM products WHERE id = $1")
-
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	result, err := query.Exec(productId)
+	query := "DELETE FROM products WHERE id = $1"
+	
+	result, err := pr.connection.Exec(query, productId)
 
 	if err != nil {
 		fmt.Println(err)
@@ -142,21 +137,14 @@ func (pr *ProductRepository) DeleteProduct(productId int) error {
 	if rowsAffected == 0 {
 		return ErrProductNotFound
 	}
-
-	query.Close()
 
 	return nil
 }
 
 func (pr *ProductRepository) UpdateProduct(product models.Product, requesterId int) error {
-	query, err := pr.connection.Prepare("UPDATE products SET name = $1, price = $2 WHERE id = $3 AND user_id = $4")
+	query := "UPDATE products SET name = $1, price = $2 WHERE id = $3 AND user_id = $4"
 
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	result, err := query.Exec(product.Name, product.Price, product.ID, requesterId)
+	result, err := pr.connection.Exec(query, product.Name, product.Price, product.ID, requesterId)
 
 	if err != nil {
 		fmt.Println(err)
@@ -173,8 +161,6 @@ func (pr *ProductRepository) UpdateProduct(product models.Product, requesterId i
 	if rowsAffected == 0 {
 		return ErrProductNotFound
 	}
-
-	query.Close()
 
 	return nil
 }
