@@ -19,8 +19,10 @@ func NewProductUsecase(repo repositories.ProductRepository) ProductUsecase {
 	}
 }
 
-func (pu *ProductUsecase) GetProducts() ([]models.Product, error) {
-	return pu.productRepository.GetProducts()
+func (pu *ProductUsecase) GetProducts(page, limit int) ([]models.Product, error) {
+	offset := (page - 1) * limit
+	
+	return pu.productRepository.GetProducts(limit, offset)
 }
 
 func (pu *ProductUsecase) CreateProduct(product models.Product) (*models.Product, error) {

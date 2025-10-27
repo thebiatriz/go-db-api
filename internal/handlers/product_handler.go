@@ -21,7 +21,24 @@ func NewProductHandler(usecase usecases.ProductUsecase) ProductHandler {
 }
 
 func (p *ProductHandler) GetProducts(c *gin.Context) {
-	products, err := p.productUsecase.GetProducts()
+	pageStr := c.DefaultQuery("page", "1")
+	limitStr := c.DefaultQuery("limit", "10")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	if limit > 50 {
+		limit = 50
+	}
+
+	products, err := p.productUsecase.GetProducts(page, limit)
 	if err != nil {
 		handleDomainError(c, err)
 		return

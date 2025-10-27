@@ -20,9 +20,9 @@ func NewProductRepository(connection *sql.DB) ProductRepository {
 	}
 }
 
-func (pr *ProductRepository) GetProducts() ([]models.Product, error) {
-	query := "SELECT id, name, price, user_id FROM products"
-	rows, err := pr.connection.Query(query)
+func (pr *ProductRepository) GetProducts(limit, offset int) ([]models.Product, error) {
+	query := "SELECT id, name, price, user_id FROM products LIMIT $1 OFFSET $2"
+	rows, err := pr.connection.Query(query, limit, offset)
 
 	if err != nil {
 		fmt.Println(err)
