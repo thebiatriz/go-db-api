@@ -22,9 +22,9 @@ func NewUserRepository(connection *sql.DB) UserRepository {
 	}
 }
 
-func (ur *UserRepository) GetUsers() ([]models.User, error) {
-	query := "SELECT id, name, email, role FROM users"
-	rows, err := ur.connection.Query(query)
+func (ur *UserRepository) GetUsers(limit, offset int) ([]models.User, error) {
+	query := "SELECT id, name, email, role FROM users LIMIT $1 OFFSET $2"
+	rows, err := ur.connection.Query(query, limit, offset)
 
 	if err != nil {
 		fmt.Println(err)
