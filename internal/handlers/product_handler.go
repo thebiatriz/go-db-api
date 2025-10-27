@@ -10,17 +10,17 @@ import (
 	"github.com/thebiatriz/go-db-api/internal/usecases"
 )
 
-type productHandler struct {
+type ProductHandler struct {
 	productUsecase usecases.ProductUsecase
 }
 
-func NewProductHandler(usecase usecases.ProductUsecase) productHandler {
-	return productHandler{
+func NewProductHandler(usecase usecases.ProductUsecase) ProductHandler {
+	return ProductHandler{
 		productUsecase: usecase,
 	}
 }
 
-func (p *productHandler) GetProducts(c *gin.Context) {
+func (p *ProductHandler) GetProducts(c *gin.Context) {
 	products, err := p.productUsecase.GetProducts()
 	if err != nil {
 		handleDomainError(c, err)
@@ -30,7 +30,7 @@ func (p *productHandler) GetProducts(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, products)
 }
 
-func (p *productHandler) CreateProduct(c *gin.Context) {
+func (p *ProductHandler) CreateProduct(c *gin.Context) {
 	var req models.CreateProductRequest
 
 	requesterIdStr, exists := c.Get("userId")
@@ -77,7 +77,7 @@ func (p *productHandler) CreateProduct(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, insertedProduct)
 }
 
-func (p *productHandler) GetProductById(c *gin.Context) {
+func (p *ProductHandler) GetProductById(c *gin.Context) {
 	id := c.Param("id")
 
 	productId, err := strconv.Atoi(id)
@@ -100,7 +100,7 @@ func (p *productHandler) GetProductById(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, product)
 }
 
-func (p *productHandler) DeleteProduct(c *gin.Context) {
+func (p *ProductHandler) DeleteProduct(c *gin.Context) {
 	id := c.Param("id")
 
 	productId, err := strconv.Atoi(id)
@@ -160,7 +160,7 @@ func (p *productHandler) DeleteProduct(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func (p *productHandler) UpdateProduct(c *gin.Context) {
+func (p *ProductHandler) UpdateProduct(c *gin.Context) {
 	var req models.UpdateProductRequest
 	id := c.Param("id")
 

@@ -21,7 +21,7 @@ func NewProductRepository(connection *sql.DB) ProductRepository {
 }
 
 func (pr *ProductRepository) GetProducts() ([]models.Product, error) {
-	query := "SELECT id, name, price, user_id FROM product"
+	query := "SELECT id, name, price, user_id FROM products"
 	rows, err := pr.connection.Query(query)
 
 	if err != nil {
@@ -54,7 +54,7 @@ func (pr *ProductRepository) GetProducts() ([]models.Product, error) {
 
 func (pr *ProductRepository) CreateProduct(product models.Product) (int, error) {
 	var id int
-	query, err := pr.connection.Prepare("INSERT INTO product" +
+	query, err := pr.connection.Prepare("INSERT INTO products" +
 		"(name, price, user_id)" +
 		"VALUES ($1, $2, $3) RETURNING id")
 
@@ -75,7 +75,7 @@ func (pr *ProductRepository) CreateProduct(product models.Product) (int, error) 
 }
 
 func (pr *ProductRepository) GetProductById(productId int) (*models.Product, error) {
-	query, err := pr.connection.Prepare("SELECT id, name, price, user_id FROM product WHERE id = $1")
+	query, err := pr.connection.Prepare("SELECT id, name, price, user_id FROM products WHERE id = $1")
 
 	if err != nil {
 		fmt.Println(err)
@@ -105,7 +105,7 @@ func (pr *ProductRepository) GetProductById(productId int) (*models.Product, err
 }
 
 func (pr *ProductRepository) DeleteProduct(productId int) error {
-	query, err := pr.connection.Prepare("DELETE FROM product WHERE id = $1")
+	query, err := pr.connection.Prepare("DELETE FROM products WHERE id = $1")
 
 	if err != nil {
 		fmt.Println(err)
@@ -136,7 +136,7 @@ func (pr *ProductRepository) DeleteProduct(productId int) error {
 }
 
 func (pr *ProductRepository) UpdateProduct(product models.Product, requesterId int) error {
-	query, err := pr.connection.Prepare("UPDATE product SET name = $1, price = $2 WHERE id = $3 AND user_id = $4")
+	query, err := pr.connection.Prepare("UPDATE products SET name = $1, price = $2 WHERE id = $3 AND user_id = $4")
 
 	if err != nil {
 		fmt.Println(err)
